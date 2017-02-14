@@ -1,29 +1,46 @@
-#ifndef PRNG_H
-#define PRNG_H
 
-#include <random>
+/* This is a dummy file put in the place of the unlocatable 
+	and missing from GitHub file prng.hpp. 
+	
+	This file's purpose is assumed to be the selection and 
+	concatenation of pseudo-random bits into strings.
+
+	Andrea Rommal, 8/5/2013
+	Version 3
+
+*/
+
+#include <stdio.h>
+#include <stdlib.h> 
 #include <vector>
-#include <cstdint>
-#include <functional>
+#include <bitset>
+#include <math.h>
 
-template<class T>
-void *create_randomness(uint64_t n, std::vector<T> &rand) {
-	// Prepare n bits of randomness using a pseudo-random number generator.
-	// A vector instead of a raw array is used to store the data because
-	// this way, it's easier for the caller to keep track of the allocation.
-	std::uniform_int_distribution<T>
-		distribution(0, std::numeric_limits<T>::max());
-	std::mt19937 mt_engine(42);
-	auto generator = std::bind(distribution, mt_engine);
+using namespace std;
+class prng {
+
+public:
 	
-	uint64_t num_chunks = n/sizeof(rand[0])+1;
-	rand.reserve(num_chunks);
-	
-	for (auto i = 0; i < num_chunks; i++) {
-		rand[i] = generator(); 
+/* -------------------------------------------------------------------------- */
+
+			 //creates # of 64-bit values that have n bits in total
+	void * create_randomness(uint64_t size_of_string, vector<uint64_t> *vector_to_fill) { 
+		vector_to_fill->resize(size_of_string/(8*sizeof(uint64_t))+1);
+		for(uint n=0;n < (size_of_string/(8*sizeof(uint64_t))+1);n++){
+			uint64_t rand_num = get_rand_num();
+			vector_to_fill->at(n)=rand_num;
+		}
+		void *vector_filled = vector_to_fill;
+		return vector_filled;
 	}
 
-	return (&rand[0]);
-}
+/* -------------------------------------------------------------------------- */
 
-#endif
+		//gets a 64-bit random number
+	uint64_t get_rand_num() {	 // Mink 9-10-2014, new, more eff ver
+		uint64_t rand_val = (rand() & 0xFFFFFFFF);	 // revised 
+		rand_val <<= 32;
+		rand_val |= (rand() & 0xFFFFFFFF);
+		return (rand_val);
+	}
+};

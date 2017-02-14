@@ -18,6 +18,7 @@
 
 // A weak design generator as described by Hartman and Raz
 // Not (yet) for distribution
+
 #include<sys/time.h>
 #include<tr1/cstdint>
 #include<cmath>
@@ -38,43 +39,45 @@ using namespace std;
 
 extern int debug_level;
 
-// Algorithm taken from Matters Computational, 39.1.2.
-// Works for moduli of up to 61 bits.
-// NOTE: We need a 64 bit float type, so double (instead
-// of long double as used by fxt) suffices on 64 bit machines
-// NOTE: It's _extremely_ important to inline this function -- gives
-// a 35% performance increase on my machine.
-inline uint64_t multiply_mod(uint64_t a, uint64_t b, uint64_t m,
-			     double m_inv) {
-    uint64_t x = a*b;
-    uint64_t y = m*(uint64_t)((double)a*(double)b*m_inv +
-			      (double)1/2);
-    uint64_t r = x-y;
+	// Algorithm taken from Matters Computational, 39.1.2.
+	// Works for moduli of up to 61 bits.
+	// NOTE: We need a 64 bit float type, so double (instead
+	// of long double as used by fxt) suffices on 64 bit machines
+	// NOTE: It's _extremely_ important to inline this function -- gives
+	// a 35% performance increase on my machine.
+	
+		// deleted, replaced with a*b mod m where called
+// inline uint64_t multiply_mod(uint64_t a, uint64_t b, uint64_t m, double m_inv) {	
+    // uint64_t x = a*b;
+    // uint64_t y = m*(uint64_t)((double)a*(double)b*m_inv +
+			      // (double)1/2);
+    // uint64_t r = x-y;
+    // if ((int64_t)r < 0)
+	 // r += m;
+	
+    // return r;
+// }
 
-    if ((int64_t)r < 0)
-	r += m;
+/* -------------------------------------------------------------------------- */
 
-    return r;
-}
-
-// Horner's rule for polynomial evaluation, using modular arithmetic
+	// Horner's rule for polynomial evaluation, using modular arithmetic
+	
 template <class T, class F>
 T weakdes_gfp::horner_poly(const vector<T> &coeffs, T x, T modulus, F inv_modulus) {
 	T res = 0;
- 
-	for(size_t i = 0; i < coeffs.size(); i++) {
-	    res = multiply_mod(res, x, modulus, inv_modulus) + coeffs[i];
-	}
 
-	// Since the coefficients are upper bounded by the modulus,
-	// the final non-modular addition can make the result too large
-	// by at most modulus-2. Consequently, subtracting the modulus
-	// once to get the remainder in case the result is too large
-	// suffices (brings about 10% performance improvement
-	// over multiply_mod(res, 1, modulus, inv_modulus))
+	for(size_t i = 0; i < coeffs.size(); i++) {
+	    //res = multiply_mod(res, x, modulus, inv_modulus) + coeffs[i]; // replaced with modular multiplication below
+		res = ((res*x) % modulus) + coeffs[i];
+	}
+		// Since the coefficients are upper bounded by the modulus,
+		// the final non-modular addition can make the result too large
+		// by at most modulus-2. Consequently, subtracting the modulus
+		// once to get the remainder in case the result is too large
+		// suffices (brings about 10% performance improvement
+		// over multiply_mod(res, 1, modulus, inv_modulus))
 	if (res >= modulus)
 	    res -= modulus;
-
 #ifdef EXPENSIVE_SANITY_CHECKS
 	if (res >= modulus) {
 	    cerr << "Internal error: assumption in horner_poly failed!"
@@ -86,30 +89,32 @@ T weakdes_gfp::horner_poly(const vector<T> &coeffs, T x, T modulus, F inv_modulu
 	return res;
 }
 
-void weakdes_gfp::compute_admissible_params() {
-	// This design has the constraint that t must be a prime _number_
-	// (it could also work with arbitrary prime powers, but we don't
-	// support this -- use the GF(2^n) specialisation in this case),
-	// but works for arbitrary values of m
+/* -------------------------------------------------------------------------- */
 
-	// By default, assume that the parameters are alright.
+void weakdes_gfp::compute_admissible_params() {
+		// This design has the constraint that t must be a prime _number_
+		// (it could also work with arbitrary prime powers, but we don't
+		// support this -- use the GF(2^n) specialisation in this case),
+		// but works for arbitrary values of m
+		
+		// By default, assume that the parameters are alright.
 	weakdes::compute_admissible_params();
 
-	// The primality test used in the following is probabilistic.
-	// With more iterations, the results become more certain
+		// The primality test used in the following is probabilistic.
+		// With more iterations, the results become more certain
 	static unsigned int test_repetitions = 10;
 
-	// If not, fix up
+		// If not, fix up
 	mpz_t t_gmp;
 	mpz_init_set_ui(t_gmp, t_requested);
 
 	if (mpz_probab_prime_p(t_gmp, test_repetitions) != 2) {
-		// Pick next prime that is larger than t_requested
+			// Pick next prime that is larger than t_requested
 		mpz_t new_prime; mpz_init(new_prime);
 		mpz_nextprime(new_prime, t_gmp);
 
 		if (mpz_fits_ulong_p (new_prime) != 0) {
-			t = mpz_get_ui(new_prime);
+			t = mpz_get_ui(new_prime);	// set "t" to next prime
 		} else {
 			// Okay, it's essentially impossible that the
 			// new prime does not fit into an unsigned
@@ -119,14 +124,14 @@ void weakdes_gfp::compute_admissible_params() {
 			exit(-1);
 		}
 
-		cerr << "Warning: t is not a prime number "
+		cout << "Warning: t is not a prime number "
 		     << "(using t=" << t << " instead)" << endl;
 	}
 
-	// Compute the degree of the evaluated polynomial
-	// See weakdes_gf2x for why we use t_requested.
+		// Compute the degree of the evaluated polynomial
+		// See weakdes_gf2x for why we use t_requested.
 	deg = (unsigned int)ceil(log((long double)m)/log((long double)t_requested)-1);
-
+	 if (deg == 0) deg=1;
 	if (deg == 0) {
 		cerr << "Error (gfp): Polynomial degree is zero" << endl;
 		cerr << "(m=" << m << ", t_requested=" << t_requested << ")" << endl;
@@ -140,6 +145,8 @@ void weakdes_gfp::compute_admissible_params() {
 	}
 }
 
+/* -------------------------------------------------------------------------- */
+
 uint64_t weakdes_gfp::compute_d() {
 	return t*t;
 }
@@ -152,16 +159,19 @@ uint64_t weakdes_gfp::compute_d() {
 // with m is arbitrary, t=p^{deg}, (deg \in \mathbbm{N}), d=t^{2},
 // r=2e (e is Euler's constant), and p prime.
 
-// This function computes the set S_{i}, which consists of
-// t indices \in [d]. 
-// NOTE: The effective parameters of the weak design
-// are t and deg, the others are dependent quantities.
-// (naturally, other combinations can also be used
-// as defining parameters)
-// NOTE: In the end of the day, m denotes (after combining the weak
-// design with an m-bit extractor) the number of output bits. See
-// the comment in 1bitext.cc why uint64_t is more than sufficient 
-// as data type for m, d, and t.
+/* -------------------------------------------------------------------------- */
+
+	// This function computes the set S_{i}, which consists of
+	// t indices \in [d]. 
+	// NOTE: The effective parameters of the weak design
+	// are t and deg, the others are dependent quantities.
+	// (naturally, other combinations can also be used
+	// as defining parameters)
+	// NOTE: In the end of the day, m denotes (after combining the weak
+	// design with an m-bit extractor) the number of output bits. See
+	// the comment in 1bitext.cc why uint64_t is more than sufficient 
+	// as data type for m, d, and t.
+
 void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	unsigned long count;
 	vector<uint64_t> coeff(deg+1);
@@ -172,8 +182,8 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 #endif
 
 #ifdef EXPENSIVE_SANITY_CHECKS
-	// Derive d and m from t and deg, ensuring that no
-	// overflows can occur
+		// Derive d and m from t and deg, ensuring that no
+		// overflows can occur
 	if (deg*numbits<uint64_t>(t) > sizeof(uint64_t)*8) {
 	    cerr << "Internal error: Overflows when computing "
 		 << "d=t^2 or m=t^deg" << endl;
@@ -191,14 +201,14 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	}
 #endif
 
-	// i is interpreted as a log(m) bit quantity (since 0 <= i < m)
-	// Compute the coefficients of the polynomial
-	// by dividing the log(m) bits of i into deg parts with
-	// log(t) bits each (deg = log(m)/log(t))
+		// i is interpreted as a log(m) bit quantity (since 0 <= i < m)
+		// Compute the coefficients of the polynomial
+		// by dividing the log(m) bits of i into deg parts with
+		// log(t) bits each (deg = log(m)/log(t))
 	uint64_t log_t = numbits<uint64_t>(t);
 
-	// We work mod t and concatenate <a, poly(a)>. Ensure that the
-	// concatenated result does not overflow the elementary data type
+		// We work mod t and concatenate <a, poly(a)>. Ensure that the
+		// concatenated result does not overflow the elementary data type
 
 #ifdef EXPENSIVE_SANITY_CHECKS
 	if (2*log_t > sizeof(uint64_t)*8) {
@@ -207,9 +217,9 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	}
 #endif
 
-	// Recall that t specifies the number of bit indices in S_{i},
-	// m denote how many sets S_{i} are computed, and d
-	// denotes the bit length of the input string (the random seed)
+		// Recall that t specifies the number of bit indices in S_{i},
+		// m denote how many sets S_{i} are computed, and d
+		// denotes the bit length of the input string (the random seed)
 	if (debug_level >= EXCESSIVE_INFO) {
 		cerr << "t=" << t << ", m=" << m << ", d=" << d << endl;
 		cerr << "log(t)=" << log_t << endl;
@@ -217,42 +227,45 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 
 	uint64_t mask = ((uint64_t)1 << log_t) - 1;
 
-	// We need the coefficients for evaluating the polynomial
-	// with Horner's rule, so pre-compute them in an extra loop
-	// NOTE: A polynomial of degree deg has deg+1 coefficients,
-	// so we need to iterate up to and _including_ deg.
-	for (count = 0; count <= deg; count++) {
-		coeff[count] = (i & (mask << (count*log_t))) >> count*log_t;
-		coeff[count] = coeff[count] % t;
+		// We need the coefficients for evaluating the polynomial
+		// with Horner's rule, so pre-compute them in an extra loop
+		// NOTE: A polynomial of degree deg has deg+1 coefficients,
+		// so we need to iterate up to and _including_ deg.
 
+	uint64_t val = i;			// added this line to allow alternate method of storing coeffs to work
+	for (count = 0; count <= deg; count++) {
+		coeff[deg-count] = val % t;	// chg so that LS coeff is in last entry, since Horner ruler work in reverse order
+		val = val / t;
+		
 		if (debug_level >= EXCESSIVE_INFO)
 			cerr << "Coefficient " << count << ": " <<
 				coeff[count] << endl;
 	}
 
-	// Iterate over all a \in GF(t) and compute <a, poly(a)>
-	// NOTE: Since t fits into an elementary data type, poly(a)
-	// is guaranteed to fit into an elementary data type when
-	// evaluated over GF(t) as well (this need not be the case
-	// if the polynomial were evaluated over \mathbb{R}).
-	// NOTE: If the code turns out to be slow, optimisation would
-	// most likely pay off here.
+		// Iterate over all a \in GF(t) and compute <a, poly(a)>
+		// NOTE: Since t fits into an elementary data type, poly(a)
+		// is guaranteed to fit into an elementary data type when
+		// evaluated over GF(t) as well (this need not be the case
+		// if the polynomial were evaluated over \mathbb{R}).
+		// NOTE: If the code turns out to be slow, optimisation would
+		// most likely pay off here.
 	uint64_t a;
 	uint64_t res, res_num, res_num_tmp;
 	double inv_t; // Precomputed floating-point 1/t
 	
-	// We only iterate up to t_requested and not up to the actual t
-	// TODO: Ensure that this is not mathematically inadmissible for some reason.
+		// We only iterate up to t_requested and not up to the actual t
+		// TODO: Ensure that this is not mathematically inadmissible for some reason.
+		// Note: t_requested = 2*l and t= "next prime > t_requested"
 	indices.clear();
-	for (a = 0; a < t_requested; a++) {
-		inv_t = (double)1/t;
+	inv_t = (double)1/t;
+	for (a = 0; a < t_requested; a++) {		// changed range to 1-to-t_requested
 		res = horner_poly<uint64_t, double>(coeff, a, t, inv_t);
 
-		// Finally, generate the pair <a, poly(a)> as a concatenation
-		// of the bit values, which denotes one element of S_{i}.
-		// Since d=t^{2}, and we have made sure that d fits into
-		// an elementary data type, the concatenation also fits into
-		// an elementary data type.
+			// Finally, generate the pair <a, poly(a)> as a concatenation
+			// of the bit values, which denotes one element of S_{i}.
+			// Since d=t^{2}, and we have made sure that d fits into
+			// an elementary data type, the concatenation also fits into
+			// an elementary data type.
 #ifdef EXPENSIVE_SANITY_CHECKS
 		size_t nb_a = numbits<uint64_t>(a);
 
@@ -266,9 +279,6 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 		}
 #endif
 
-		res_num = a;
-		res_num_tmp = res;
-
 #ifdef EXPENSIVE_SANITY_CHECKS
 		if ((res_num_tmp & mask) != res_num_tmp) {
 		    cerr << "Internal error: res_num_tmp contains more "
@@ -276,22 +286,21 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 		    exit(-1);
 		}
 #endif
+			// corrected to be "t*p(x)+x" or "t*x+p(x)", original wraped around & yield non-uniform mapping
+	//	res_num = t*res+a;    // this mapping yield uniform distr over interspersed parts of seed pool
+		res_num = t*a+res;    // this mapping yield uniform distr over the 1st contiguous part of seed pool
 
-		// Perform bitwise concatenation of a and poly(a)=res
-		res_num_tmp <<= log_t;
-		res_num |= res_num_tmp;
-
-		// Although it is guaranteed that the concatenated
-		// result fits into to available number of bits, the
-		// numerical result may exceed d. This mandates a
-		// modulo division (NOTE: Does not make any performance
-		// difference if we use multiply_mod or the modulo
-		// division here)
-		if (res_num > d)
+			// Although it is guaranteed that the concatenated
+			// result fits into to available number of bits, the
+			// numerical result may exceed d. This mandates a
+			// modulo division (NOTE: Does not make any performance
+			// difference if we use multiply_mod or the modulo
+			// division here)
+		if (res_num >= d)	// Mink 9-10-2014 chg to ">=" from ">"
 		    res_num = res_num % d;
 
-		// NOTE: Each result will be interpreted as a bit index
-		// when the weak design is composed with a 1-bit extractor
+			// NOTE: Each result will be interpreted as a bit index
+			// when the weak design is composed with a 1-bit extractor
 		if (debug_level >= EXCESSIVE_INFO) {
 		    cerr << "S contains <a, poly(a)>: <"
 			 << bitset<30>(a) << ", " 
@@ -300,7 +309,6 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 			     << res_num << endl;
 			cerr << "Binary: " << bitset<62>(res_num) << endl;
 		}
-
 		indices.push_back(res_num);
 	}
 
@@ -308,7 +316,5 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	measure(&end);
 
 	timestamp_subtract(&delta, &end, &start);
-	if (stat != NULL)
-	  (*stat) << delta_to_ns(delta) << endl;
 #endif
 }

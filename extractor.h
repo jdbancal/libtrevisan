@@ -24,7 +24,7 @@
 #include<iostream>
 #include "primitives.h"
 #include "phys_params.h"
-#include "R_interp.h"
+//#include "R_interp.h"				//ROMMAL EDIT 8-5-13, commented out include statement including R-code
 
 // All parameters that are required to describe the properties
 // of a Trevisan extractor
@@ -33,20 +33,23 @@ struct params {
 
 	wd_type wdt;	   // Weak design
 	bext_type bxt;	   // Bit extractor
-	wd_type basic_wdt; // Basic design for the block design
-
+	//wd_type basic_wdt; // Basic design for the block design		//ROMMAL EDIT 7-30-13, commented out block
+																	//design variable, unused in this version
 	int num_tasks; // 0 means unlimited
 
 	bool verbose;	     // Enable chit-chat?
 	bool dryrun;	     // Perform only parameter calculations
 	bool ignore_entropy; // Ignore that extractor requires a larger k than available?
+ 	int  si_tst ;        // Mink 9-10-2014, add opt Si_test
+     	bool blk_des; 	     // Mink 9-10-2014, add opt Block Design
+     	bool streaming;	     // Mink 7-20-2016, add opt for QRNG proj data streamin
 
 	bool skip_bitext;      // Skip the bit-extraction step?
 	bool save_weakdes; // Save the weak design?
-	std::string wd_filename;
-	std::ofstream wd_out;
-
-	R_interp *R;
+	// std::string wd_filename;				//ROMMAL EDIT 7-30-13, commented out unused variables
+	// std::ofstream wd_out;
+	
+	//R_interp *R;							//ROMMAL EDIT 8-5-13, commented out include statement including R-code
 };
 
 int dispatch(struct params &params);

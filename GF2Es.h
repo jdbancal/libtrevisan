@@ -18,8 +18,8 @@
 
 #ifndef GF2ES_H
 #define GF2ES_H
-// Simple extension of NTL's GF2E class that allows for
-// directly assigning unsigned long values without much ado
+	// Simple extension of NTL's GF2E class that allows for
+	// directly assigning unsigned long values without much ado
 
 #include <NTL/GF2E.h>
 #include <NTL/GF2X.h>
@@ -29,18 +29,20 @@
 
 NTL_CLIENT
 
-// "s" is for "sane value assignment"
-// It's strange that this is seriously required -- seems
-// fairly bogus. However, all conversion methods from long
-// to GF2X and GF2E allow only for setting a _single_ bit,
-// that is, the zeroeth coefficient. No idea what the rationale
-// behind this is...
+	// "s" is for "sane value assignment"
+	// It's strange that this is seriously required -- seems
+	// fairly bogus. However, all conversion methods from long
+	// to GF2X and GF2E allow only for setting a _single_ bit,
+	// that is, the zeroeth coefficient. No idea what the rationale
+	// behind this is...
 class GF2Es: public GF2E {
 public:
     GF2Es() : GF2E() { }
     GF2Es(_ntl_ulong val) : GF2E() {
 	(void)this->setValue(val);
     }
+
+/* -------------------------------------------------------------------------- */
 
     GF2E *setValue(_ntl_ulong val) {
 	if (val == 0) {
@@ -50,13 +52,15 @@ public:
 		return this;
 	}
 
-	// Okay because _ntl_ulong is guaranteed to fit into one word
+		// Okay because _ntl_ulong is guaranteed to fit into one word
 	this->LoopHole().xrep.SetLength(1);
 	this->LoopHole().xrep[0] = val;
 	rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
 
 	return this;
     };
+
+/* -------------------------------------------------------------------------- */
 
     GF2E *setValue(vector<_ntl_ulong> &val) {
 	this->LoopHole().xrep.SetLength(val.size());
@@ -78,10 +82,37 @@ public:
 
 	return this;
     };
+
+/* -------------------------------------------------------------------------- */
+
+		//  added for NTL conv of Coeff
+    GF2E *setMyValue(vector<unsigned char> &val) {
+	this->LoopHole().xrep.SetLength(val.size());
+
+	bool all_zero = true;
+	for (unsigned i = 0; i < val.size(); i++) {
+printf("MyValue.val=0x%x \n", val[i]&0xFF );
+		this->LoopHole().xrep[i] = val[i];
+		if (val[i] != 0)
+			all_zero = false;
+	}
+
+	if (all_zero) {
+		clear(this->LoopHole());
+
+		return this;
+	}
+
+	rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
+
+	return this;
+    };
+
+/* -------------------------------------------------------------------------- */
 };
 
-// Same again for setting coefficients on GF2EX without having to explicitely
-// create GF2X instances first.
+	// Same again for setting coefficients on GF2EX without having to explicitely
+	// create GF2X instances first.
 inline void SetCoeff_s(GF2EX& x, long i, _ntl_ulong a) {
 	if (a == 0)
 		SetCoeff(x, i, GF2E::zero());

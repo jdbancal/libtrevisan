@@ -31,4 +31,4 @@ void set_irrep(GF2X &P, unsigned n);
 #else
 void set_irrep(int p[], unsigned n);
 #endif
-#endif
+ #endif

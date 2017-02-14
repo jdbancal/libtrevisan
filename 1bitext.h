@@ -20,53 +20,54 @@
 #ifndef ONE_BITEXT_H
 #define ONE_BITEXT_H
 
-// NOTE: Unsigned long suffices for the number of vertex bits because 
-// sizeof(unsigned long) is 32 resp 64 bits. Since very large numbers are
-// supposed to be processed on 64 bit machines, we are restricted to
-// 2^{62}/2^{3} = 2^{59} addressable bits, which is still considerably
-// more than the amount of RAM contemporary machines can handle (2^{48}).
-// However, we don't use mp_bitcnt_t as data type because the signed
-// representation is required for the modulo calculations in the
-// Gabber-Galil construction.
-// NOTE: This definition would provide problems on Win64, where 
-// unsigned long is 32 bits (we are safe on Unix/Linux).
+	// NOTE: Unsigned long suffices for the number of vertex bits because 
+	// sizeof(unsigned long) is 32 resp 64 bits. Since very large numbers are
+	// supposed to be processed on 64 bit machines, we are restricted to
+	// 2^{62}/2^{3} = 2^{59} addressable bits, which is still considerably
+	// more than the amount of RAM contemporary machines can handle (2^{48}).
+	// However, we don't use mp_bitcnt_t as data type because the signed
+	// representation is required for the modulo calculations in the
+	// Gabber-Galil construction.
+	// NOTE: This definition would provide problems on Win64, where 
+	// unsigned long is 32 bits (we are safe on Unix/Linux).
+	
 typedef unsigned long vertex_t;
 typedef signed long vertex_t_s;
 #include<fstream>
 #include<string>
 #include<limits>
 #include "bitfield.hpp"
-#include "phys_params.h"
-#include "R_interp.h"
+#include "phys_params.h"		
 
-class bitext {
-public:
-	bitext(R_interp *r_interp) {
-		stat = nullptr;
-		global_rand = nullptr;
+class bitext{
+public:						
 
-		set_r_interp(r_interp);
+/* -------------------------------------------------------------------------- */
+
+	bitext() {					// replaces code that is not supported by c++98
+		global_rand = NULL;	
 	};
 
-	virtual ~bitext() {
-		if (stat)
-			stat->close();
-	};
+/* -------------------------------------------------------------------------- */
 
-	void set_stat_file(const std::string &filename) {
-		// TODO: Open an output stream
+	virtual ~bitext() {		// replaces code that is not supported by c++98
+		//if (stat)
+			//stat->close();
 	};
+	
+
+/* -------------------------------------------------------------------------- */
 
 	virtual void set_input_data(void *global_rand, struct phys_params &pp) {
 		this->pp = pp;
 		this->global_rand = global_rand;
 		mu = static_cast<long double>(pp.m)/(pp.alpha*pp.n);
-
-		b.set_raw_data(global_rand, pp.n);
+		b.set_raw_data(global_rand, pp.n);	// def in "bitfield.hpp"
 	};
 
-	// Inform the bit extractor about the overlap parameter of the weak design
-	//
+/* -------------------------------------------------------------------------- */
+
+		// Inform the bit extractor about the overlap parameter of the weak design
 	virtual void set_r(long double r) {
 		this->r  = r;
 	}
@@ -74,34 +75,26 @@ public:
 	// The following functions need to be implemented by derived
 	// classes, that is, by specific 1-bit extractors.
 
-	// Return the number of random input bits required for one
-	// output bit
+/* -------------------------------------------------------------------------- */
+
+		// Return the number of random input bits required for one
+		// output bit
 	virtual vertex_t num_random_bits() = 0;
 
-	// Compute the required source entropy
+/* -------------------------------------------------------------------------- */
+
+		// Compute the required source entropy
 	virtual uint64_t compute_k() = 0;
 
 	// initial_rand: Pointer to randomness supplied by the weak design
-	virtual bool extract(void *initial_rand) = 0;
-
-private:
-	void set_r_interp(R_interp *r_interp) {
-		this->r_interp = r_interp;
-
-		std::string bitext_code =
-#include "generated/bitext_embedd.inc"
-		r_interp->eval_code(bitext_code);
-	};
-
-	std::ofstream *stat;
-
+	virtual bool extract(void *sub_seed_a, void *sub_seed_b) = 0;	// Split sub-seed into 2 vectors & deleted "out_data"
+	
 protected:
 	struct phys_params pp;
 	long double mu;
 	long double r;
 	void *global_rand;
 	bitfield<uint64_t, uint64_t> b;
-	R_interp *r_interp;
 };
 
 #endif

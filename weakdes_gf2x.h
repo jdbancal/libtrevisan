@@ -30,8 +30,13 @@ public:
 	uint64_t compute_d();
 	void compute_admissible_params();
 
-	long double get_r() { return 2*M_E ; }
+	long double get_r() { return M_E ; } //  2*M_E ; }
 
+	
+	uint64_t ceil_log2(uint64_t t_requested) {		// added definition of ceil_log2(...)
+		return ceil(log2(t_requested));
+	}
+	
 private:
 	unsigned int deg; // Degree of the polynomial used to compute (a, poly(a))
 

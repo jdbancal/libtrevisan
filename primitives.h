@@ -21,36 +21,31 @@
 
 #include<string>
 #include<cmath>
-#include "1bitext_expander.h"
-#include "1bitext_xor.h"
 #include "1bitext_rsh.h"
 #include "weakdes_gf2x.h"
 #include "weakdes_gfp.h"
-#include "weakdes_block.h"
-#include "blockdes_params.h"
-#include "weakdes_aot.h"
 
-enum class wd_type { GF2X, GFP, BLOCK, AOT }; // Available weak designs
-enum class bext_type { LU, XOR, RSH };   // Available one-bit extractors
 
-// Map the weak design to the overlap parameter
-// NOTE: While the aot weak design could have a different r than 2e, this
-// does not make sense, so we ignore this case here -- it would lead to
-// a causality dilemma in the main dispatcher, because, for instance, the
-// XOR extractor needs r to compute l, and in turn the number of random bits
-// per extraction run, while the weak designs depend on this information
-// during their construction...
-template<class T>
-struct wd_overlap_trait {
-	static constexpr long double r = 2*M_E;
-};
 
-template<>
-struct wd_overlap_trait<class weakdes_block> {
-	static constexpr long double r = 1.0;
-};
+//enum class wd_type { GF2X, GFP, BLOCK, AOT }; // Available weak designs
+enum class wd_type {GF2X, GFP}; 				// isolated only 2 weak designs, commented out the above version
+//enum class bext_type { LU, XOR, RSH };  // Available one-bit extractors
+enum class bext_type {RSH };   				// isolated only 1 1bit extractor, commented out the above version
 
-// NOTE: We could also overload operator<< instead of providing string conversions
+	// Map the weak design to the overlap parameter
+	// NOTE: While the aot weak design could have a different r than 2e, this
+	// does not make sense, so we ignore this case here -- it would lead to
+	// a causality dilemma in the main dispatcher, because, for instance, the
+	// XOR extractor needs r to compute l, and in turn the number of random bits
+	// per extraction run, while the weak designs depend on this information
+	// during their construction...
+// template<class T>
+// struct wd_overlap_trait {
+// 	 static const long double r = M_E; // 2*M_E;	   // works for gcc 4.4.7, but not for 4.8.3 (Fedora) or 4.8.2 (CentOS 7)
+// };
+
+
+	// NOTE: We could also overload operator<< instead of providing string conversions
 wd_type get_weakdes(const std::string &wd);
 bext_type get_bitext(const std::string &bx);
 std::string bitext_to_string(bext_type bext);

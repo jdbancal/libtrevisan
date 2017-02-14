@@ -35,51 +35,57 @@ NTL_CLIENT
 
 class bitext_rsh : public bitext {
 public:
-	bitext_rsh(R_interp *r_interp) : bitext(r_interp) { };
+	//bitext_rsh(R_interp *r_interp) : bitext(r_interp) { };
+	bitext_rsh() : bitext() { };	// removed r_interp section
 	~bitext_rsh();
 
-	void set_input_data(void *global_rand, struct phys_params &pp) override {
-		bitext::set_input_data(global_rand, pp);
-		compute_r_l();
+/* -------------------------------------------------------------------------- */
 
+void set_input_data(void *global_rand, struct phys_params &pp){	// removed "override" at the end of this statement
+	bitext::set_input_data(global_rand, pp);  // def in "1bitext.h"
+	compute_r_l();
+	pp.l = l;
+	pp.t_req = 2*l;
 		// The coefficients of the polynomial (computed from the
 		// global randomness) do not vary between invocations, so we
 		// can compute them before the extraction starts.
-		create_coefficients();
-	};
+	create_coefficients();
+};
 
-	// Pure virtual functions from the base class that need to be
-	// implemented
-	vertex_t num_random_bits();
-	bool extract(void *initial_rand);
-	uint64_t compute_k() override;
+/* -------------------------------------------------------------------------- */
+
+	// Pure virtual functions from the base class that need to be implemented
+vertex_t num_random_bits();
+	bool extract(void *sub_seed_a, void *sub_seed_b);  // split sub-seed into 2 vectors 
+	uint64_t compute_k();	// removed "override" at the end of this statement
 	
 private:
-	void create_coefficients();
-	void compute_r_l();
-
 	uint64_t r;      // Order of polynomial, see the paper for details
 	uint64_t l;      // Seed length parameter, see the paper for details
 	uint64_t chars_per_half; // Number of char instances in half of the intial randomness
 
 	typedef uint64_t idx_t; // Index type for the bit field
-
 #ifdef USE_NTL
 	GF2EX poly;
 	GF2X irred_poly;
 	typedef _ntl_ulong chunk_t; // Chunk type for the bitfield
-	typedef _ntl_ulong data_t;  // Internal library type to store GF2m elements
+// typedef _ntl_ulong data_t;  // Internal library type to store GF2m elements
+	 typedef int data_t;
 #else
 	std::vector<BIGNUM*> coeffs;
 	int irred_poly[5]; // The irrep is either a trinomial or pentanomial
 	BIGNUM *horner_poly_gf2n(BIGNUM *x);
 
-	// TODO: Determine if smaller index types cause any significant speedup
+		// TODO: Determine if smaller index types cause any significant speedup
 	typedef uint64_t chunk_t;
 	typedef BN_ULONG data_t;
 #endif
 
 	bitfield<chunk_t, idx_t> b;
+	void create_coefficients();
+	void compute_r_l();
+	void build_ext_poly_seg(uint64_t low_bound, uint64_t upper_bound, unsigned char* vect);  
+
 };
 
 #endif
