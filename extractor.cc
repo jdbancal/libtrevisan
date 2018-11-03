@@ -560,10 +560,10 @@ int dispatch(struct params &params) {
 
 	// We rely on openssl being compiled with thread support
 #define OPENSSL_THREAD_DEFINES
-#include <openssl/opensslconf.h>
-#ifndef OPENSSL_THREADS
-#error Please use a thread capable openssl
-#endif
+//#include <openssl/opensslconf.h>  // doesn't seem to be needed
+//#ifndef OPENSSL_THREADS
+//#error Please use a thread capable openssl
+//#endif
 
 	init_timekeeping();
 	init_openssl_locking();

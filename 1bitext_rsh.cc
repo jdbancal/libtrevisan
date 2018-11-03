@@ -177,7 +177,7 @@ void bitext_rsh::create_coefficients() {
 			  sizeof(chunk_t)*vec.size()/sizeof(char), coeffs[i]);
 		if (debug_level >= EXCESSIVE_INFO) {
 			cerr << "RSH Coefficient " << i << "(" << r << "): "
-			     << BN_bn2dec(coeffs[i]) << cerr << endl;
+			     << BN_bn2dec(coeffs[i]) << endl;
 		}
 #endif
 	}

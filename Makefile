@@ -1,5 +1,5 @@
 # Configurable settings
-OPTIMISE=-O3
+OPTIMISE=-O3  #-Wall # -O3
 #DEBUG=-ggdb # -Wall -Wextra -Weffc++
 #VARIANTS=-DEXPENSIVE_SANITY_CHECKS
 #VARIANTS+=-DWEAKDES_TIMING
@@ -7,7 +7,7 @@ OPTIMISE=-O3
 
 # Platform and configuration specific optimisations
 HAVE_SSE4=y
-HAVE_GF2X=n
+HAVE_GF2X=y
 
 ###### Nothing user-configurable below here ########
 .PHONY: all clean paper src-pdf figures notes
@@ -27,23 +27,24 @@ headers = 1bitext.h debug.h timing.h weakdes_gf2x.h weakdes_gfp.h weakdes_block.
 	  utils.hpp weakdes.h bitfield.hpp
 platform=$(shell uname)
 INCDIRS=-I/opt/local/include
-INCDIRS+=-I/Users/wolfgang/src/openssl-1.0.1c/include
+INCDIRS+=-I../openssl/include
 LIBDIRS=-L/opt/local/lib
+LIBDIRS+=-L../openssl
 CXXFLAGS=$(OPTIMISE) $(OPENMP) $(DEBUG) $(VARIANTS) $(INCDIRS)
 ifeq ($(HAVE_SSE4),y)
 CXXFLAGS+=-msse4.2 -DHAVE_SSE4
 endif
-LIBS=-lgmp -lm -lntl -lcrypto -ltbb
+LIBS=-lm -lntl -lcrypto -ltbb -lpthread -lgmp
 
 ifeq ($(HAVE_GF2X),y)
 LIBS+=-lgf2x
 endif
 
+CXXFLAGS+=-std=c++11
+
 ifeq ($(platform),Linux)
-CXXFLAGS+=-std=gnu++0x
 LIBS+=-lrt -lntl
 else
-CXXFLAGS+=-std=c++11
 CXX=g++-mp-4.7
 endif
 
@@ -62,12 +63,15 @@ endif
 			   $(shell echo 'RInside:::LdFlags()'  | R --vanilla --slave))
 	@echo $(RLDFLAGS) > .rldflags
 
+folder: 
+	@mkdir -p generated
+
 $(objects): %.o: %.cc %.h .rcxxflags generated/bd_r_embedd.inc \
 	    generated/bitext_embedd.inc
 	$(CXX) -c $(CXXFLAGS) $(shell cat .rcxxflags) $< -o $@
 
 gen_irreps: gen_irreps.cc
-	$(CXX) gen_irreps.cc -o gen_irreps -lntl -lgf2x
+	$(CXX) gen_irreps.cc -o gen_irreps $(LIBS)
 
 generated/irreps_ntl.o generated/irreps_ossl.o: gen_irreps
 	./gen_irreps OSSL > generated/irreps_ossl.cc
@@ -85,7 +89,7 @@ generated/bitext_embedd.inc: parameters.r
 	@cat parameters.r >> generated/bitext_embedd.inc
 	@echo ")A1Y6%\";" >> generated/bitext_embedd.inc
 
-extractor: $(all.objects) extractor.cc $(headers) .rldflags .rcxxflags
+extractor: folder $(all.objects) extractor.cc $(headers) .rldflags .rcxxflags
 	$(CXX) $(CXXFLAGS) $(shell cat .rcxxflags) extractor.cc $(all.objects) -o extractor \
 	$(LIBDIRS) $(LIBS) $(shell cat .rldflags)
 
@@ -119,7 +123,7 @@ src-pdf:
 	enscript -E -G -j *.h *.cc *.hpp *.r \
 	         -o /tmp/code.ps; ps2pdf /tmp/code.ps code.pdf
 clean:
-	@rm -f *.o weakdes_test 1bitext_test extractor
+	@rm -f *.o weakdes_test 1bitext_test extractor gen_irreps
 	@rm -rf generated/*
 	@rm -f .rldflags .rcxxflags
 	@$(MAKE) clean -C paper
