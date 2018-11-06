@@ -10,7 +10,7 @@ HAVE_SSE4=y
 HAVE_GF2X=y
 
 ###### Nothing user-configurable below here ########
-.PHONY: all clean paper src-pdf figures notes
+.PHONY: all clean src-pdf figures
 all: extractor
 BITEXTS = 1bitext_xor.o 1bitext_expander.o 1bitext_rsh.o
 WDS = weakdes_gf2x.o weakdes_gfp.o weakdes_aot.o weakdes_block.o
@@ -93,37 +93,22 @@ extractor: folder $(all.objects) extractor.cc $(headers) .rldflags .rcxxflags
 	$(CXX) $(CXXFLAGS) $(shell cat .rcxxflags) extractor.cc $(all.objects) -o extractor \
 	$(LIBDIRS) $(LIBS) $(shell cat .rldflags)
 
-# NOTE: This is separated from the paper target on purpose. Generating the
-# figures takes long compared to TeXing the paper, and the inputs rarely change.
-# A proper solution would be to write the paper in Sweave and use cacheSweave,
-# but for the moment, the extra complexity does not seem worth it.
-# NOTE: Did not bother to check if the source files are more up-to-date than
-# the pictures. They are always (re)generated when this target is run
+# NOTE: This reproduces some figures from the original paper
 figures: | paper/pictures
 	@echo "Generating figures..."
-	@R CMD BATCH plot_params.r
 	@R CMD BATCH block_design_params.r
 	@R CMD BATCH xor_params.r
 	@R CMD BATCH lu_params.r
-	@R CMD BATCH perf.r
 
 paper/pictures:
 	@mkdir -p paper/pictures
-
-paper:
-	$(MAKE) -C paper
-
-arxiv:
-	$(MAKE) -C paper arxiv && mv paper/arxiv.tar .
-
-notes:
-	$(MAKE) -C notes
 
 src-pdf:
 	enscript -E -G -j *.h *.cc *.hpp *.r \
 	         -o /tmp/code.ps; ps2pdf /tmp/code.ps code.pdf
 clean:
 	@rm -f *.o weakdes_test 1bitext_test extractor gen_irreps
-	@rm -rf generated/*
+	@rm -rf generated
 	@rm -f .rldflags .rcxxflags
-	@$(MAKE) clean -C paper
+	@rm -f *.r.Rout Rplots.pdf .RData
+

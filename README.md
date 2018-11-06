@@ -20,4 +20,17 @@ This program relies on a number of extra libraries. Installation commands are pr
 
 After these libraries are installed, simply run `make` within the libtrevisian folder. This should create the targets `extractor` and `gen_irreps`.
 
+## Optional
+
+Several additional rules are available in the Makefile. Here is additional software needed to run them
+
+ * `make src-pdf` needs enscript. It can be installed with the command `sudo apt install enscript`
+ * `make figures` needs some R libraries. To install them, run the command following commands:
+
+ ```
+     sudo R
+     install.packages("ggplot2")
+```
+
+
 
