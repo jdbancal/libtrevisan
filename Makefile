@@ -4,19 +4,20 @@ OPTIMISE=-O3
 #VARIANTS=-DEXPENSIVE_SANITY_CHECKS
 #VARIANTS+=-DWEAKDES_TIMING
 #VARIANTS+=-DUSE_NTL
+OPENMP=-fopenmp -lpthread
 
 # Platform and configuration specific optimisations
 HAVE_SSE4=y
-HAVE_GF2X=n
+HAVE_GF2X=y
 
 ###### Nothing user-configurable below here ########
-.PHONY: all clean paper src-pdf figures notes
+.PHONY: all clean src-pdf figures
 all: extractor
 BITEXTS = 1bitext_xor.o 1bitext_expander.o 1bitext_rsh.o
 WDS = weakdes_gf2x.o weakdes_gfp.o weakdes_aot.o weakdes_block.o
 
 objects = ${BITEXTS} ${WDS} timing.o primitives.o ossl_locking.o \
-	  blockdes_params.o R_interp.o
+	  blockdes_params.o R_interp.o stream_ops.o
 # Objects with a separate make target
 objects.ext = generated/irreps_ntl.o generated/irreps_ossl.o
 
@@ -27,23 +28,24 @@ headers = 1bitext.h debug.h timing.h weakdes_gf2x.h weakdes_gfp.h weakdes_block.
 	  utils.hpp weakdes.h bitfield.hpp
 platform=$(shell uname)
 INCDIRS=-I/opt/local/include
-INCDIRS+=-I/Users/wolfgang/src/openssl-1.0.1c/include
+INCDIRS+=-I../openssl/include
 LIBDIRS=-L/opt/local/lib
+LIBDIRS+=-L../openssl
 CXXFLAGS=$(OPTIMISE) $(OPENMP) $(DEBUG) $(VARIANTS) $(INCDIRS)
 ifeq ($(HAVE_SSE4),y)
 CXXFLAGS+=-msse4.2 -DHAVE_SSE4
 endif
-LIBS=-lgmp -lm -lntl -lcrypto -ltbb
+LIBS=-lm -lntl -lcrypto -ltbb -lpthread -lgmp
 
 ifeq ($(HAVE_GF2X),y)
 LIBS+=-lgf2x
 endif
 
+CXXFLAGS+=-std=c++11
+
 ifeq ($(platform),Linux)
-CXXFLAGS+=-std=gnu++0x
 LIBS+=-lrt -lntl
 else
-CXXFLAGS+=-std=c++11
 CXX=g++-mp-4.7
 endif
 
@@ -67,13 +69,15 @@ $(objects): %.o: %.cc %.h .rcxxflags generated/bd_r_embedd.inc \
 	$(CXX) -c $(CXXFLAGS) $(shell cat .rcxxflags) $< -o $@
 
 gen_irreps: gen_irreps.cc
-	$(CXX) gen_irreps.cc -o gen_irreps -lntl -lgf2x
+	@echo "Creating gen_irreps" 
+	$(CXX) $(INCDIRS) $(LIBDIRS) gen_irreps.cc -g -o gen_irreps $(LIBS) 
 
 generated/irreps_ntl.o generated/irreps_ossl.o: gen_irreps
+	@echo "Creating generated/...."
 	./gen_irreps OSSL > generated/irreps_ossl.cc
-	$(CXX) generated/irreps_ossl.cc -c -o generated/irreps_ossl.o
+	$(CXX) $(INCDIRS) generated/irreps_ossl.cc -c -g -o generated/irreps_ossl.o
 	./gen_irreps > generated/irreps_ntl.cc
-	$(CXX) generated/irreps_ntl.cc -c -o generated/irreps_ntl.o
+	$(CXX) $(INCDIRS) generated/irreps_ntl.cc -c -g -o generated/irreps_ntl.o
 
 generated/bd_r_embedd.inc: blockdes.r
 	@echo "R\"A1Y6%(" > generated/bd_r_embedd.inc
@@ -85,41 +89,30 @@ generated/bitext_embedd.inc: parameters.r
 	@cat parameters.r >> generated/bitext_embedd.inc
 	@echo ")A1Y6%\";" >> generated/bitext_embedd.inc
 
-extractor: $(all.objects) extractor.cc $(headers) .rldflags .rcxxflags
+generated: 
+	@mkdir -p generated
+
+extractor: generated $(all.objects) extractor.cc $(headers) .rldflags .rcxxflags
+	@echo "Creating EXTRACTOR"
 	$(CXX) $(CXXFLAGS) $(shell cat .rcxxflags) extractor.cc $(all.objects) -o extractor \
 	$(LIBDIRS) $(LIBS) $(shell cat .rldflags)
 
-# NOTE: This is separated from the paper target on purpose. Generating the
-# figures takes long compared to TeXing the paper, and the inputs rarely change.
-# A proper solution would be to write the paper in Sweave and use cacheSweave,
-# but for the moment, the extra complexity does not seem worth it.
-# NOTE: Did not bother to check if the source files are more up-to-date than
-# the pictures. They are always (re)generated when this target is run
+# NOTE: This reproduces some figures from the original paper
 figures: | paper/pictures
 	@echo "Generating figures..."
-	@R CMD BATCH plot_params.r
 	@R CMD BATCH block_design_params.r
 	@R CMD BATCH xor_params.r
 	@R CMD BATCH lu_params.r
-	@R CMD BATCH perf.r
 
 paper/pictures:
 	@mkdir -p paper/pictures
-
-paper:
-	$(MAKE) -C paper
-
-arxiv:
-	$(MAKE) -C paper arxiv && mv paper/arxiv.tar .
-
-notes:
-	$(MAKE) -C notes
 
 src-pdf:
 	enscript -E -G -j *.h *.cc *.hpp *.r \
 	         -o /tmp/code.ps; ps2pdf /tmp/code.ps code.pdf
 clean:
-	@rm -f *.o weakdes_test 1bitext_test extractor
-	@rm -rf generated/*
+	@rm -f *.o weakdes_test 1bitext_test extractor gen_irreps
+	@rm -rf generated
 	@rm -f .rldflags .rcxxflags
-	@$(MAKE) clean -C paper
+	@rm -f *.r.Rout Rplots.pdf .RData
+

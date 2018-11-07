@@ -40,6 +40,9 @@ struct params {
 	bool verbose;	     // Enable chit-chat?
 	bool dryrun;	     // Perform only parameter calculations
 	bool ignore_entropy; // Ignore that extractor requires a larger k than available?
+	int  si_tst ;        // Mink 9-10-2014, add opt Si_test
+	bool blk_des; 	     // Mink 9-10-2014, add opt Block Design
+	bool streaming;	     // Mink 7-20-2016, add opt for QRNG proj data streamin
 
 	bool skip_bitext;      // Skip the bit-extraction step?
 	bool save_weakdes; // Save the weak design?

@@ -41,6 +41,8 @@ public:
 	void set_input_data(void *global_rand, struct phys_params &pp) override {
 		bitext::set_input_data(global_rand, pp);
 		compute_r_l();
+		pp.l = l;
+		pp.t_req = 2*l;
 
 		// The coefficients of the polynomial (computed from the
 		// global randomness) do not vary between invocations, so we
@@ -51,12 +53,13 @@ public:
 	// Pure virtual functions from the base class that need to be
 	// implemented
 	vertex_t num_random_bits();
-	bool extract(void *initial_rand);
+	bool extract(void *sub_seed_a, void *sub_seed_b);  // split sub-seed into 2 vectors 
 	uint64_t compute_k() override;
 	
 private:
 	void create_coefficients();
 	void compute_r_l();
+	void build_ext_poly_seg(uint64_t low_bound, uint64_t upper_bound, unsigned char* vect);  
 
 	uint64_t r;      // Order of polynomial, see the paper for details
 	uint64_t l;      // Seed length parameter, see the paper for details

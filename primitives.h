@@ -40,15 +40,15 @@ enum class bext_type { LU, XOR, RSH };   // Available one-bit extractors
 // XOR extractor needs r to compute l, and in turn the number of random bits
 // per extraction run, while the weak designs depend on this information
 // during their construction...
-template<class T>
-struct wd_overlap_trait {
-	static constexpr long double r = 2*M_E;
-};
+//template<class T>
+//struct wd_overlap_trait {
+//	static const long double r = M_E; // 2*M_E;	   // works for gcc 4.4.7, but not for 4.8.3 (Fedora) or 4.8.2 (CentOS 7) so removed now
+//};
 
-template<>
-struct wd_overlap_trait<class weakdes_block> {
-	static constexpr long double r = 1.0;
-};
+//template<>
+//struct wd_overlap_trait<class weakdes_block> {
+//	static constexpr long double r = 1.0;
+//};
 
 // NOTE: We could also overload operator<< instead of providing string conversions
 wd_type get_weakdes(const std::string &wd);
