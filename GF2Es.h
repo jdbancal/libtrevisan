@@ -37,47 +37,71 @@ NTL_CLIENT
 // behind this is...
 class GF2Es: public GF2E {
 public:
-    GF2Es() : GF2E() { }
-    GF2Es(_ntl_ulong val) : GF2E() {
-	(void)this->setValue(val);
-    }
+	GF2Es() : GF2E() { }
+	GF2Es(_ntl_ulong val) : GF2E() {
+		(void)this->setValue(val);
+	}
 
-    GF2E *setValue(_ntl_ulong val) {
-	if (val == 0) {
-		clear(this->LoopHole());
-		this->LoopHole().xrep[0] = 0;
+	GF2E *setValue(_ntl_ulong val) {
+		if (val == 0) {
+			clear(this->LoopHole());
+			this->LoopHole().xrep[0] = 0;
+
+			return this;
+		}
+
+		// Okay because _ntl_ulong is guaranteed to fit into one word
+		this->LoopHole().xrep.SetLength(1);
+		this->LoopHole().xrep[0] = val;
+		rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
 
 		return this;
-	}
+	};
 
-	// Okay because _ntl_ulong is guaranteed to fit into one word
-	this->LoopHole().xrep.SetLength(1);
-	this->LoopHole().xrep[0] = val;
-	rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
+	GF2E *setValue(vector<_ntl_ulong> &val) {
+		this->LoopHole().xrep.SetLength(val.size());
 
-	return this;
-    };
+		bool all_zero = true;
+		for (unsigned i = 0; i < val.size(); i++) {
+			this->LoopHole().xrep[i] = val[i];
+			if (val[i] != 0)
+				all_zero = false;
+		}
 
-    GF2E *setValue(vector<_ntl_ulong> &val) {
-	this->LoopHole().xrep.SetLength(val.size());
+		if (all_zero) {
+			clear(this->LoopHole());
 
-	bool all_zero = true;
-	for (unsigned i = 0; i < val.size(); i++) {
-		this->LoopHole().xrep[i] = val[i];
-		if (val[i] != 0)
-			all_zero = false;
-	}
+			return this;
+		}
 
-	if (all_zero) {
-		clear(this->LoopHole());
+		rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
 
 		return this;
-	}
+	};
 
-	rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
+	//  added for NTL conv of Coeff
+	GF2E *setMyValue(vector<unsigned char> &val) {
+		this->LoopHole().xrep.SetLength(val.size());
 
-	return this;
-    };
+		bool all_zero = true;
+		for (unsigned i = 0; i < val.size(); i++) {
+			printf("MyValue.val=0x%x \n", val[i]&0xFF );
+			this->LoopHole().xrep[i] = val[i];
+			if (val[i] != 0)
+				all_zero = false;
+		}
+
+		if (all_zero) {
+			clear(this->LoopHole());
+
+			return this;
+		}
+
+		rem(this->LoopHole(), this->LoopHole(), GF2E::modulus());
+
+		return this;
+	};
+
 };
 
 // Same again for setting coefficients on GF2EX without having to explicitely

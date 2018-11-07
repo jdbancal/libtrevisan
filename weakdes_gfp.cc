@@ -18,6 +18,7 @@
 
 // A weak design generator as described by Hartman and Raz
 // Not (yet) for distribution
+
 #include<sys/time.h>
 #include<tr1/cstdint>
 #include<cmath>
@@ -44,7 +45,9 @@ extern int debug_level;
 // of long double as used by fxt) suffices on 64 bit machines
 // NOTE: It's _extremely_ important to inline this function -- gives
 // a 35% performance increase on my machine.
-inline uint64_t multiply_mod(uint64_t a, uint64_t b, uint64_t m,
+
+// deleted, replaced with a*b mod m below where called
+/*inline uint64_t multiply_mod(uint64_t a, uint64_t b, uint64_t m,
 			     double m_inv) {
     uint64_t x = a*b;
     uint64_t y = m*(uint64_t)((double)a*(double)b*m_inv +
@@ -55,15 +58,16 @@ inline uint64_t multiply_mod(uint64_t a, uint64_t b, uint64_t m,
 	r += m;
 
     return r;
-}
+}*/
 
 // Horner's rule for polynomial evaluation, using modular arithmetic
 template <class T, class F>
 T weakdes_gfp::horner_poly(const vector<T> &coeffs, T x, T modulus, F inv_modulus) {
 	T res = 0;
- 
+
 	for(size_t i = 0; i < coeffs.size(); i++) {
-	    res = multiply_mod(res, x, modulus, inv_modulus) + coeffs[i];
+	    //res = multiply_mod(res, x, modulus, inv_modulus) + coeffs[i]; // replaced with modular multiplication below
+		res = ((res*x) % modulus) + coeffs[i];
 	}
 
 	// Since the coefficients are upper bounded by the modulus,
@@ -109,7 +113,7 @@ void weakdes_gfp::compute_admissible_params() {
 		mpz_nextprime(new_prime, t_gmp);
 
 		if (mpz_fits_ulong_p (new_prime) != 0) {
-			t = mpz_get_ui(new_prime);
+			t = mpz_get_ui(new_prime);	// set "t" to next prime
 		} else {
 			// Okay, it's essentially impossible that the
 			// new prime does not fit into an unsigned
@@ -126,7 +130,8 @@ void weakdes_gfp::compute_admissible_params() {
 	// Compute the degree of the evaluated polynomial
 	// See weakdes_gf2x for why we use t_requested.
 	deg = (unsigned int)ceil(log((long double)m)/log((long double)t_requested)-1);
-
+	if (deg == 0)
+		deg = 1;
 	if (deg == 0) {
 		cerr << "Error (gfp): Polynomial degree is zero" << endl;
 		cerr << "(m=" << m << ", t_requested=" << t_requested << ")" << endl;
@@ -221,10 +226,12 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	// with Horner's rule, so pre-compute them in an extra loop
 	// NOTE: A polynomial of degree deg has deg+1 coefficients,
 	// so we need to iterate up to and _including_ deg.
-	for (count = 0; count <= deg; count++) {
-		coeff[count] = (i & (mask << (count*log_t))) >> count*log_t;
-		coeff[count] = coeff[count] % t;
 
+	uint64_t val = i;			// added this line to allow alternate method of storing coeffs to work
+	for (count = 0; count <= deg; count++) {
+		coeff[deg-count] = val % t;	// chg so that LS coeff is in last entry, since Horner ruler work in reverse order
+		val = val / t;
+		
 		if (debug_level >= EXCESSIVE_INFO)
 			cerr << "Coefficient " << count << ": " <<
 				coeff[count] << endl;
@@ -243,9 +250,10 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 	
 	// We only iterate up to t_requested and not up to the actual t
 	// TODO: Ensure that this is not mathematically inadmissible for some reason.
+	// Note: t_requested = 2*l and t= "next prime > t_requested"
 	indices.clear();
-	for (a = 0; a < t_requested; a++) {
-		inv_t = (double)1/t;
+	inv_t = (double)1/t;
+	for (a = 0; a < t_requested; a++) {		// changed range to 1-to-t_requested
 		res = horner_poly<uint64_t, double>(coeff, a, t, inv_t);
 
 		// Finally, generate the pair <a, poly(a)> as a concatenation
@@ -266,9 +274,6 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 		}
 #endif
 
-		res_num = a;
-		res_num_tmp = res;
-
 #ifdef EXPENSIVE_SANITY_CHECKS
 		if ((res_num_tmp & mask) != res_num_tmp) {
 		    cerr << "Internal error: res_num_tmp contains more "
@@ -277,9 +282,9 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 		}
 #endif
 
-		// Perform bitwise concatenation of a and poly(a)=res
-		res_num_tmp <<= log_t;
-		res_num |= res_num_tmp;
+		// corrected to be "t*p(x)+x" or "t*x+p(x)", original wraped around & yield non-uniform mapping
+//		res_num = t*res+a;    // this mapping yield uniform distr over interspersed parts of seed pool
+		res_num = t*a+res;    // this mapping yield uniform distr over the 1st contiguous part of seed pool
 
 		// Although it is guaranteed that the concatenated
 		// result fits into to available number of bits, the
@@ -287,7 +292,7 @@ void weakdes_gfp::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 		// modulo division (NOTE: Does not make any performance
 		// difference if we use multiply_mod or the modulo
 		// division here)
-		if (res_num > d)
+		if (res_num >= d)	// Mink 9-10-2014 chg to ">=" from ">"
 		    res_num = res_num % d;
 
 		// NOTE: Each result will be interpreted as a bit index

@@ -82,7 +82,7 @@ public:
 	virtual uint64_t compute_k() = 0;
 
 	// initial_rand: Pointer to randomness supplied by the weak design
-	virtual bool extract(void *initial_rand) = 0;
+	virtual bool extract(void *sub_seed_a, void *sub_seed_b) = 0;	// Split sub-seed into 2 vectors
 
 private:
 	void set_r_interp(R_interp *r_interp) {

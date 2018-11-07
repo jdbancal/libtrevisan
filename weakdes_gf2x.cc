@@ -19,6 +19,7 @@
 // A weak design generator as described by Ma and Tan/Portmann
 // Based on weakdes.cc. It remains to be seen if both variants
 // should be merged back into a single implementation.
+
 #include<sys/time.h>
 #include<tr1/cstdint>
 #include<cmath>
@@ -228,7 +229,10 @@ void weakdes_gf2x::compute_Si(uint64_t i, vector<uint64_t> &indices) {
 #else
 	// We need the coefficients for evaluating the polynomial
 	// with Horner's rule, so pre-compute them in an extra loop
-	for (count = 0; count < deg; count++) {
+
+	// changed count < deg to count <= deg in order to use all 
+	// of the degrees calculated, and disallow duplicate polynomials
+	for (count = 0; count <= deg; count++) {
 		// NOTE: Since the coefficients are restricted to
 		// t bits, they are automatically members of GF(2^t)
 		coeff.push_back((i & (mask << (count*log_t))) >> count*log_t);
