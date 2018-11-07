@@ -290,6 +290,7 @@ trevisan_extract(uint64_t i, vector<uint64_t> &indices,
 		// position i of the extracted randomness (most significant bit, MSB, is first).
 		if (!params.skip_bitext) {
 			if (bext->extract(y_S_i, y_S_ib)) { // added a 2nd vector & replaced "out_data"
+				#pragma omp atomic update
 				extracted_rand[(i + ptr_base_mi->at(a)) / BITS_PER_TYPE(int)] |= // added "base_mi" offset to output
 						(1 << (31 - ((i + ptr_base_mi->at(a)) % (8 * sizeof(int)))));	// reverse order of bit insertion to MSB 1st
 			}
@@ -455,6 +456,7 @@ void trevisan_dispatcher(class weakdes *wd, class bitext *bext, params &params) 
 	//	allocation within a 64-bit word:
 	//	 3, 2, 1, 0 (Byte#) for word #0 (where Byte 3 is MSB)
 	//	 7, 6, 5, 4 (Byte#) for word #1
+	#pragma omp parallel for
 	for (uint64_t i = 0; i < params.pp.m; i++) { // loop thru each (row) extracted bit, for Blk_des each Blk is proc by at the same time
 		vector<uint64_t> indices;
 		vector<unsigned int> y_S_i; // use only for 1st half of sub-seed
