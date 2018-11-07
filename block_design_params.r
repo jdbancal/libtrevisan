@@ -3,6 +3,8 @@
 source("parameters.r")
 source("blockdes.r")
 library(ggplot2)
+library(scales)
+library(grid)
 
 ########### Check parameter behaviour ########### 
 compute.block.params <- function(.m, .r, .t.seq) {
@@ -34,7 +36,7 @@ g.sub <- ggplot(data=dat.t, aes(x=t, y=a, colour=m)) + geom_line() +
   scale_x_continuous("", breaks=(c(8,128,256,512,1024))) +
   scale_colour_discrete(name="Output length m") +
   ylab("Number of blocks") +
-  opts(legend.position="none", plot.background=theme_rect(fill="white"))
+  theme(legend.position="none", plot.background=element_rect(fill="white"))
 
 g <- ggplot(data=dat.t, aes(x=t, y=total.seed, colour=m)) + geom_line() +
   scale_x_continuous("1-Bit extractor seed length",

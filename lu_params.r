@@ -38,7 +38,7 @@ g <- ggplot(dat=dat.lu.steps, aes(x=m, y=steps)) + geom_line(aes(colour=as.facto
   facet_grid(~eps) + scale_y_log10("# of random walk steps [log. scale]") +
   scale_x_log10("# output bits (m) [log. scale]") +
   scale_colour_discrete(name=expression(nu)) +
-  opts(title="Lu extractor: Number of random walk steps")
+  ggtitle("Lu extractor: Number of random walk steps")
 #print(g)
 ggsave("paper/pictures/lu_steps.pdf", g)
 # -> the number of steps grows considerably with decreasing mu. Since all except tiny
@@ -76,7 +76,7 @@ g <- ggplot(dat=lu.steps.dat, aes(x=mu, y=nu, colour=as.factor(alpha))) + geom_l
   scale_x_log10(expression(paste("Extraction factor ", mu))) +
   scale_y_continuous(expression(paste("Parameter ", nu))) +
   scale_colour_discrete(name=expression(paste("Entropy factor ", alpha))) +
-  opts(title=expression(paste("Lu extractor: Interplay between ", nu, " and ", mu)))
+  ggtitle(expression(paste("Lu extractor: Interplay between ", nu, " and ", mu)))
 #print(g)
 ggsave("paper/pictures/lu_param_nu.pdf", g)
 
@@ -105,7 +105,7 @@ g <- ggplot(data=data.n.mu.alpha.eps, aes(x=n, y=seed.length, colour=alpha)) + g
   scale_y_continuous("Total seed length for r=2e weak design") +
   facet_grid(eps~mu, scales="free_y") +
   scale_colour_discrete(name=expression(paste("Source\nentropy ", alpha))) +
-  opts(title="Lu extractor: Scaling behaviour")
+  ggtitle("Lu extractor: Scaling behaviour")
 print(g)
 ggsave("paper/pictures/lu_overview.pdf", g)
 
@@ -117,6 +117,6 @@ g <- ggplot(data=dat.subs, aes(x=n, y=seed.inv.ratio.m, colour=alpha)) +
   scale_y_log10(expression(paste("Ratio of seed length to extracted bits (",
       m=mu*alpha*n, ") [log. scale]"))) +
   scale_colour_discrete(name=expression(paste("Source\nentropy ", alpha))) +
-  opts(title=expression(paste("Lu extractor: Seed to extraction ratio (", mu, "=0.05)")))
+  ggtitle(expression(paste("Lu extractor: Seed to extraction ratio (", mu, "=0.05)")))
 #print(g)
 ggsave("paper/pictures/lu_ratio.pdf", g)
