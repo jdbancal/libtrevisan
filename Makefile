@@ -1,6 +1,6 @@
 # Configurable settings
 OPTIMISE=-O3
-DEBUG=-ggdb # -Wall -Wextra -Weffc++
+#DEBUG=-ggdb # -Wall -Wextra -Weffc++
 #VARIANTS=-DEXPENSIVE_SANITY_CHECKS
 #VARIANTS+=-DWEAKDES_TIMING
 #VARIANTS+=-DUSE_NTL

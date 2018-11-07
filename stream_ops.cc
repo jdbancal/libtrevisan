@@ -145,7 +145,7 @@ uint64_t socket_get_request_data_bits(int socket_num, char char1, char char2, ui
 			incr  = len - accum;	
       if ( (amt=recv(socket_num, &data_array[accum], incr, 0)) <= 0) {	// Rcv Response msg data
         perror("***ERROR rcving Socket data ");
-        printf("***ERROR rcving data on socket=%d, got=%d of %d with last =%d\n", socket_num, accum, len, amt);
+        printf("***ERROR rcving data on socket=%d, got=%ld of %ld  with last =%ld\n", socket_num, accum, len, amt);
         exit(-1);
       }
 		accum += amt;	// update accumlated data amt
@@ -187,12 +187,12 @@ uint64_t socket_send_output_data_bits(int socket_num, char char1, char char2, ui
 			incr  = len - accum;	
       if ( (amt=send(socket_num, &data_array[accum], incr, 0)) <= 0) {	// Send output msg data
         perror("***ERROR Sending Socket Output data ");
-        printf("***ERROR Sending Output data on socket=%d, sent=%d of %d with last =%d\n", socket_num, accum, len, amt);
+        printf("***ERROR Sending Output data on socket=%d, sent=%ld of %ld with last =%ld\n", socket_num, accum, len, amt);
         exit(-1);
       }
 		accum += amt;	// update accumlated data amt
 	}
- printf("***OKAY Sending Output data on socket=%d, sent=%d of %d with last =%d\n", socket_num, accum, len, amt);
+ printf("***OKAY Sending Output data on socket=%d, sent=%ld of %ld with last =%ld\n", socket_num, accum, len, amt);
 	
 	if ( (i=recv(socket_num, hdr_strg, 8, 0)) != 8) {	// Rcv Response ACK
      perror("***ERROR rcving Socket Info Response ");
@@ -323,7 +323,7 @@ void socket_send_response_data(int socket_num, char my_ID)
 				incr  = byte_len - accum;	
          if ( (amt=send(socket_num, &data_strg[accum], incr, 0)) <= 0) {	// Send Response msg data
            perror("***ERROR rcving Socket data ");
-           printf("***ERROR rcving data on socket=%d, got=%d of %d with last =%d\n", socket_num, accum, byte_len, amt);
+           printf("***ERROR rcving data on socket=%d, got=%d of %d with last =%ld\n", socket_num, accum, byte_len, amt);
            exit(-1);
          }
 			accum += amt;	// update accumlated data amt
@@ -346,7 +346,7 @@ void stream_get_cmd_line_bits(int socket_num, uint64_t *pp_n, uint64_t *pp_m, do
 	*pp_m = 0;
 	k = 0;
 	if ( (len = socket_get_request_data_bits(socket_num, 'c', 'r', length_req, cmd_string)) < 14) {
-		printf("Failed stream_get_cmd_line request rtn %d, too little data\n", len);
+		printf("Failed stream_get_cmd_line request rtn %ld, too little data\n", len);
 	
 	} else {
 		byte_ptr = 1;
@@ -524,7 +524,7 @@ void stream_get_data_bits(uint64_t bit_len, int socket_num, uint64_t *data_array
 	
 	byte_size = ((bit_len + 63)/64) * 8; 	// round-up to next 64-bit-aligned Byte length
 	if ( (len = socket_get_request_data_bits(socket_num, 'd', 'r', bit_len, (char *) data_array)) < byte_size ) {
-		printf("Failed stream_get_data request rtn %d Bytes when expecting %d, too little data\n", len, byte_size);
+		printf("Failed stream_get_data request rtn %ld Bytes when expecting %ld, too little data\n", len, byte_size);
 		exit(-1);
 	} 
 printf("Trev rcvd %ld data bytes on socket=%d, u64[0]=0x%lx ", len,  socket_num, data_array[0]);
@@ -539,7 +539,7 @@ void stream_get_seed_bits(uint64_t bit_len, int socket_num, uint64_t *data_array
 	
 	byte_size = ((bit_len + 63)/64) * 8; 	// round-up to next 64-bit-aligned Byte length
 	if ( (len = socket_get_request_data_bits(socket_num, 's', 'r', bit_len, (char *) data_array)) < byte_size ) {
-		printf("Failed stream_get_seed request rtn %d Bytes when expecting %d, too little data\n", len, byte_size);
+		printf("Failed stream_get_seed request rtn %ld Bytes when expecting %ld, too little data\n", len, byte_size);
 		exit(-1);
 	} 
 printf("Trev requested %ld for d_bits %ld on socket=%d, rcvd %ld seed bytes, u64[0]=0x%lx ", byte_size, bit_len,  socket_num, len, data_array[0]);
@@ -554,11 +554,11 @@ void stream_send_output_bits(uint64_t bit_len, int socket_num, int *data_array)
 	
 	byte_size = ((bit_len + 31)/32) * 4; 	// round-up to next 32-bit-aligned Byte length
 	if ( (len = socket_send_output_data_bits(socket_num, 'o', 'r', bit_len, (char *) data_array)) < byte_size ) {
-		printf("Failed stream_send_output request rtn %d Bytes when expecting %d, too little data\n", len, byte_size);
+		printf("Failed stream_send_output request rtn %ld Bytes when expecting %ld, too little data\n", len, byte_size);
 		exit(-1);
 	} 
 printf("Trev sent %ld Bytes for %ld bits on socket=%d, sent %ld output bytes, u32[0]=0x%x \n", byte_size, bit_len, socket_num, len, data_array[0]);
-printf(", u32[%ld]=0x%lx, [-1]=0x%lx\n", (byte_size+3)/4, data_array[((byte_size+3)/4)-1], data_array[((byte_size+3)/4)-2]);
+printf(", u32[%ld]=0x%x, [-1]=0x%x\n", (byte_size+3)/4, data_array[((byte_size+3)/4)-1], data_array[((byte_size+3)/4)-2]);
 }
 
 /* -------------------------------------------- */
