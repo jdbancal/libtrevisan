@@ -514,6 +514,7 @@ int start_server(int *socket_fd_data, int *socket_fd_seed, int *socket_fd_out)
 		}
 	}	// end while
 	std::cout << "All 3 clients are now connected " << std::endl ;  
+	return 0;
 }     
       
 /* -------------------------------------------------------------------------- */
