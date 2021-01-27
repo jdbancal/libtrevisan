@@ -24,10 +24,10 @@ public:
 		bits_per_type=sizeof(*data)*8;
 	};
 
-	bitfield(void *data, I n) {
+	/*bitfield(void *data, I n) {
 		bits_per_type=sizeof(*data)*8;
 		set_raw_data(data, n);
-	};
+	};*/
 
 	bitfield(C *data, I n) {
 		bits_per_type=sizeof(*data)*8;
