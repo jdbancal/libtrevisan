@@ -20,6 +20,7 @@
 #ifndef R_INTERP_H
 #define R_INTERP_H
 
+#include <iostream>
 #include<RInside.h>
 #include<memory>
 #include<tbb/spin_mutex.h>
@@ -44,8 +45,8 @@ private:
 	static short instances; // Ensure there's only one R session
 
 	// Ensure that the object cannot be copied or assigned
-	R_interp& operator = (const R_interp& other) { }
-	R_interp(const R_interp& other) { }
+	R_interp& operator = (const R_interp& other) { std::cerr << "This object cannot be copied" << std::endl; return *this;}
+	R_interp(const R_interp& other) {  std::cerr << "This object cannot be copied" << std::endl; }
 };
 
 #endif
