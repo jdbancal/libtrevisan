@@ -228,7 +228,7 @@ uint64_t part_mask(uint64_t size) {
 // and weakdes. This makes the trevisan extractor algorithm
 // independent of the specific 1-bit-extractor and weak design
 // algorithms
-inline bool
+inline void
 trevisan_extract(uint64_t i, vector<uint64_t> &indices,
 								bitfield<unsigned int, uint64_t> &init_rand_bf,
 								unsigned int *y_S_i, unsigned int *y_S_ib, params &params,

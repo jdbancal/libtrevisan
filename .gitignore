@@ -1,0 +1,10 @@
+# don't commit buffer files
+.rcxxflags
+.rldflags
+
+# don't commit binaries
+*.o
+extractor
+gen_irreps
+generated
+
