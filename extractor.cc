@@ -349,9 +349,15 @@ void trevisan_dispatcher(class weakdes *wd, class bitext *bext, params &params) 
 	params.pp.base_mi_ptr = &base_mi_array; // store ptr to "base_mi_array" in "param.pp"
 	if (params.blk_des) { // prepare for Blk_design
 												// use "m_req" & init Blk cnt
-		params.pp.a = ceil((log(1.0 * params.pp.m_req - params.pp.r) -
-												log(1.0 * params.pp.t_pri - params.pp.r)) /
-											 (log(params.pp.r) - log(params.pp.r - 1.0)));
+		// TODO : Check what happens when params.pp.a is smaller than 2
+		params.pp.a = max(2.0, ceil((log(1.0 * params.pp.m_req - params.pp.r) -
+													  		 log(1.0 * params.pp.t_pri - params.pp.r)) /
+											 			    (log(params.pp.r) - log(params.pp.r - 1.0))));
+    if (ceil((log(1.0 * params.pp.m_req - params.pp.r) -
+													  		 log(1.0 * params.pp.t_pri - params.pp.r)) /
+											 			    (log(params.pp.r) - log(params.pp.r - 1.0))) < 2) {
+      cout << "WARNING: Forcing params.pp.a >= 2." << endl;
+    }
 		mi_array.resize(params.pp.a + 1); // resize Blk_Design Vectors for max len
 		base_mi_array.resize(params.pp.a + 1);
 		gen_blk_design(params); // compute Blk size & fill-in Vectors
