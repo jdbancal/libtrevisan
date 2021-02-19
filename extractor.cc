@@ -614,26 +614,6 @@ void parse_cmdline(struct params &params, int argc, char **argv) {
 
 		params.pp.i = loadArg.getValue();
 		params.pp.n = nArg.getValue(); // always init "n" to requested value
-		if (params.pp.i != "NA") { // if there is a user-defined source bits file, check its size vs "n"
-			ifstream n_file(params.pp.i);
-			if (n_file.is_open()) {
-				n_file.seekg(0, ifstream::end);
-				uint64_t size = n_file.tellg();
-				cout << endl << endl
-						 << "The number of bits in your file was: " << size
-						 << " you requested " << params.pp.n << endl;
-				uint64_t size_n = (size / 64) * 64;
-				if (params.pp.n > size_n) { // size_n = # of items in that file, divisible by 64.
-					params.pp.n = size_n;
-					cout << "Insufficient bits in file, revising n=" << params.pp.n << endl;
-				} else {
-					cout << "Input Data file exceeds specified input size of "
-							 << params.pp.n << ", will only use " << params.pp.n
-							 << " from file" << endl;
-				}
-				n_file.close();
-			}
-		}
 
 		params.pp.q = seedArg.getValue(); // added variable to store seed file name
 
@@ -896,6 +876,10 @@ NEXT_STREAM:
 				cout << "Insufficient input data in file, only " << len
 						 << " instead of specified " << params.pp.n << endl;
 				exit(-1);
+			} else if (len > params.pp.n) {
+				cout << "Input Data file exceeds specified input size of "
+						 << params.pp.n << ", will only use " << params.pp.n
+						 << " from file" << endl;
 			}
 			data_file.close();
 		} else {
@@ -931,6 +915,10 @@ NEXT_STREAM:
 //					(k_frac-(4*log2(1.0/params.pp.eps)) - 6), k , k_frac);
 		printf("Max extractable Entropy=%f, k=a*n-1=%ld (%f)\n",
 					 (k_frac - (4 * log2(1.0 / params.pp.eps)) - 6), k, k_frac);
+	  if (k_frac - (4 * log2(1.0 / params.pp.eps)) - 6 <= 0) {
+			cerr << "Nothing can be extracted" << endl;
+			exit(-1);
+		}
 		params.pp.m_req = params.pp.m; // set to requested output amt, "m"
 		if (params.pp.m == 0) {				// move here from "parse_cmdline"
 			params.pp.m = (uint64_t)(params.pp.max_entropy / (M_E)); // (2*M_E));	// Max Weak Design
